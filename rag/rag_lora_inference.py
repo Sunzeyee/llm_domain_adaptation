@@ -80,7 +80,7 @@ Answer:"""
 
     outputs = model.generate(
         **inputs,
-        max_new_tokens=50,
+        max_new_tokens=150,
     )
 
     generated = outputs[0][inputs["input_ids"].shape[1]:]
@@ -95,6 +95,6 @@ Answer:"""
 
 if __name__ == "__main__":
 
-    q = "When did J-20 enter service?"
+    q = "Java语言有哪些特点？"
 
     print(q, rag_lora_answer(q))

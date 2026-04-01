@@ -27,13 +27,13 @@ model = AutoModelForCausalLM.from_pretrained(
 
 # 加载嵌入模型和索引
 embed_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-index = faiss.read_index("knowledge.index")
-docs = np.load("docs.npy", allow_pickle=True)
+index = faiss.read_index("../data/index/chunk_300_overlap_50/knowledge.index")
+docs = np.load("../data/index/chunk_300_overlap_50/docs.npy", allow_pickle=True)
 
-def rag_answer(question, k=2):
+def rag_answer(question, k=5):
     q_emb = embed_model.encode([question], convert_to_numpy=True)
     D, I = index.search(q_emb, k)
-    context = "\n".join([docs[i] for i in I[0]])
+    context = "\n\n".join([docs[i] for i in I[0]])
 
     prompt = f"""
 Use the following context to answer the question.
@@ -45,10 +45,10 @@ Question: {question}
 Answer:
 """
     inputs = tokenizer(prompt, return_tensors="pt").to("cuda")
-    outputs = model.generate(**inputs, max_new_tokens=50)
+    outputs = model.generate(**inputs, max_new_tokens=150)
     return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 if __name__ == "__main__":
-    question = "When did J-20 enter service?"
+    question = "那存储引擎应该怎么选择？"
     print("Q:", question)
     print("A:", rag_answer(question))

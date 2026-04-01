@@ -21,7 +21,7 @@ model = AutoModelForCausalLM.from_pretrained(
 )
 
 # 加载LoRA权重
-model = PeftModel.from_pretrained(model, "./lora_model/checkpoint-336")
+model = PeftModel.from_pretrained(model, "./lora_model/checkpoint-45")
 
 prompt = "Instruction: When did J-20 enter service?\nAnswer:"
 inputs = tokenizer(prompt, return_tensors="pt").to("cuda")

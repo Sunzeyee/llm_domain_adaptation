@@ -10,10 +10,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
 # ===== 参数 =====
-THRESHOLDS = [0.6, 0.7, 0.75, 0.8, 0.85]
+THRESHOLDS = [0.6, 0.7, 0.75, 0.8]
 OVERLAPS = [0, 50]
 
-BASE_PATH = "../data/index"
+BASE_PATH = "../data/index/novel_semantic"
 
 
 # ===== 相似度 =====
@@ -72,7 +72,7 @@ def evaluate(path, dataset, answer_embs):
 # ===== 主流程 =====
 def run():
 
-    with open("../data/processed/test.json", encoding="utf-8") as f:
+    with open("../data/processed/novel_test.json", encoding="utf-8") as f:
         dataset = json.load(f)
 
     answers = [d["answer"] for d in dataset]
@@ -86,7 +86,7 @@ def run():
     for o in OVERLAPS:
         for t in THRESHOLDS:
 
-            name = f"semantic_window_t{t}_overlap_{o}"
+            name = f"semantic_t{t}"
             path = f"{BASE_PATH}/{name}"
 
             print(f"🚀 {name}")
@@ -132,12 +132,12 @@ def plot(data):
 
     plt.xlabel("Semantic Threshold")
     plt.ylabel("Score")
-    plt.title("Semantic Window Chunking Threshold Experiment")
+    plt.title("Novel: Semantic Window Chunking Threshold Experiment")
 
     plt.legend()
     plt.grid()
 
-    plt.savefig("../results/semantic_threshold_curve.png")
+    plt.savefig("../results/novel_semantic_threshold_curve.png")
     plt.show()
 
 

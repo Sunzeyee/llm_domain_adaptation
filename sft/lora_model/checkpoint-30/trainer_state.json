@@ -10,24 +10,24 @@
   "is_world_process_zero": true,
   "log_history": [
     {
-      "epoch": 0.6666666666666666,
-      "grad_norm": 10.639564514160156,
-      "learning_rate": 4.111111111111111e-05,
-      "loss": 6.5023338317871096,
+      "epoch": 0.6896551724137931,
+      "grad_norm": 5.35171365737915,
+      "learning_rate": 0.00016,
+      "loss": 6.733126831054688,
       "step": 10
     },
     {
-      "epoch": 1.3333333333333333,
-      "grad_norm": 12.4478178024292,
-      "learning_rate": 3e-05,
-      "loss": 5.644368743896484,
+      "epoch": 1.3448275862068966,
+      "grad_norm": 0.16266237199306488,
+      "learning_rate": 0.00011555555555555555,
+      "loss": 0.9276613235473633,
       "step": 20
     },
     {
       "epoch": 2.0,
-      "grad_norm": 10.307095527648926,
-      "learning_rate": 1.888888888888889e-05,
-      "loss": 5.114520645141601,
+      "grad_norm": 0.0016209608875215054,
+      "learning_rate": 7.111111111111112e-05,
+      "loss": 0.02329869270324707,
       "step": 30
     }
   ],
@@ -48,7 +48,7 @@
       "attributes": {}
     }
   },
-  "total_flos": 120861402071040.0,
+  "total_flos": 467330754674688.0,
   "train_batch_size": 1,
   "trial_name": null,
   "trial_params": null

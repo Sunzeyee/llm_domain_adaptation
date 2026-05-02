@@ -27,8 +27,8 @@ model = AutoModelForCausalLM.from_pretrained(
 
 # 加载嵌入模型和索引
 embed_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-index = faiss.read_index("../data/index/chunk_300_overlap_50/knowledge.index")
-docs = np.load("../data/index/chunk_300_overlap_50/docs.npy", allow_pickle=True)
+index = faiss.read_index("../data/index/novel_semantic/semantic_t0.3/knowledge.index")
+docs = np.load("../data/index/novel_semantic/semantic_t0.3/docs.npy", allow_pickle=True)
 
 def rag_answer(question, k=5):
     q_emb = embed_model.encode([question], convert_to_numpy=True)
@@ -49,6 +49,6 @@ Answer:
     return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 if __name__ == "__main__":
-    question = "那存储引擎应该怎么选择？"
+    question = "何塞·阿尔卡蒂奥·布恩迪亚对地球形状的发现是什么？"
     print("Q:", question)
     print("A:", rag_answer(question))

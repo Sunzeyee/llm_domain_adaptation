@@ -1,4 +1,3 @@
-# rag/hybrid_rag_inference.py
 
 import os
 import torch

@@ -27,7 +27,7 @@ CONFIGS = [
 ]
 
 
-BASE_PATH = "../data/index"
+BASE_PATH = "../data/index/novel_chunk"
 
 
 # ===== 3. 相似度 =====
@@ -104,7 +104,7 @@ def evaluate_config(config_name, dataset, answer_embeddings):
 # ===== 8. 主函数 =====
 def run_all():
 
-    with open("../data/processed/test.json", encoding="utf-8") as f:
+    with open("../data/processed/novel_test.json", encoding="utf-8") as f:
         dataset = json.load(f)
 
     # 预计算答案embedding
@@ -192,12 +192,12 @@ def plot_results(results):
     # ===== 美化 =====
     plt.xlabel("Chunk Size")
     plt.ylabel("Score")
-    plt.title("RAG Performance vs Chunk Size (with Overlap Comparison)")
+    plt.title("Novel: RAG Performance vs Chunk Size (with Overlap Comparison)")
 
     plt.legend()
     plt.grid()
 
-    plt.savefig("../results/chunk_overlap_experiment.png")
+    plt.savefig("../results/novel_chunk_overlap_experiment.png")
     plt.show()
 
 

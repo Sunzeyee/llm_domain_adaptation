@@ -10,10 +10,10 @@
   "is_world_process_zero": true,
   "log_history": [
     {
-      "epoch": 0.6666666666666666,
-      "grad_norm": 10.639564514160156,
-      "learning_rate": 4.111111111111111e-05,
-      "loss": 6.5023338317871096,
+      "epoch": 0.6896551724137931,
+      "grad_norm": 5.35171365737915,
+      "learning_rate": 0.00016,
+      "loss": 6.733126831054688,
       "step": 10
     }
   ],
@@ -34,7 +34,7 @@
       "attributes": {}
     }
   },
-  "total_flos": 60430701035520.0,
+  "total_flos": 233665377337344.0,
   "train_batch_size": 1,
   "trial_name": null,
   "trial_params": null

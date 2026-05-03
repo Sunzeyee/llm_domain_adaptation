@@ -6,7 +6,6 @@ import re
 
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-from semantic_chunk_window import semantic_chunk_window
 
 PDF_PATH = "../data/raw/mianzhanixi.pdf"
 

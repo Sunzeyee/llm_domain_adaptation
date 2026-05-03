@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG 问答 · Java 面试</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --bg-card: #ffffff;
+    --bg-card-hover: #faf8f4;
+    --text: #1a1614;
+    --text-soft: #4a4540;
+    --text-dim: #8a8580;
+    --text-muted: #b5b0aa;
+    --accent: #c7432a;
+    --accent-soft: rgba(199,67,42,0.06);
+    --accent-glow: rgba(199,67,42,0.1);
+    --border: #e8e4de;
+    --border-light: #f0ece6;
+    --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 20px rgba(0,0,0,0.06);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --font-display: 'DM Serif Display', serif;
+    --font-serif: 'Noto Serif SC', serif;
+    --font-body: 'Noto Sans SC', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+  .app {
+    display:flex; height:100vh; max-width:1440px; margin:0 auto;
+    position:relative;
+  }
+
+  /* ---- noise texture ---- */
+  .app::before {
+    content:''; position:fixed; inset:0;
+    opacity:.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events:none; z-index:0;
+  }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar {
+    width:72px; flex-shrink:0;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    padding:28px 0 20px;
+    border-right:1px solid var(--border);
+    background:var(--bg-card); position:relative; z-index:2;
+  }
+  .sidebar .logo {
+    width:36px; height:36px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-size:17px; font-style:italic;
+    background:var(--accent); color:#fff;
+    margin-bottom:20px;
+  }
+  .sidebar .nav-btn {
+    width:36px; height:36px; border-radius:var(--radius-sm); border:none;
+    background:transparent; color:var(--text-dim); cursor:pointer;
+    font-size:16px; display:flex; align-items:center; justify-content:center;
+    transition:all .2s;
+  }
+  .sidebar .nav-btn:hover { background:var(--accent-soft); color:var(--accent); }
+  .sidebar .nav-btn.active { background:var(--accent-soft); color:var(--accent); }
+  .sidebar .spacer { flex:1; }
+
+  /* ===== MAIN ===== */
+  .main { flex:1; display:flex; flex-direction:column; min-width:0; position:relative; z-index:1; }
+
+  .chat-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 32px; border-bottom:1px solid var(--border);
+    background:rgba(247,245,240,0.8);
+    backdrop-filter:blur(12px);
+  }
+  .chat-header .brand {
+    display:flex; align-items:center; gap:14px;
+  }
+  .chat-header .brand h1 {
+    font-family:var(--font-serif); font-size:15px; font-weight:600;
+    letter-spacing:.02em;
+  }
+  .chat-header .brand .badge {
+    font-size:10px; font-weight:500; padding:3px 12px; border-radius:20px;
+    background:var(--accent-soft); color:var(--accent);
+    letter-spacing:.03em; border:1px solid var(--accent-glow);
+  }
+  .chat-header .model-tag {
+    font-size:11px; color:var(--text-dim);
+    font-family:var(--font-mono); display:flex; align-items:center; gap:6px;
+  }
+  .chat-header .model-tag::before {
+    content:''; width:5px; height:5px; border-radius:50%; background:var(--accent);
+  }
+  .clear-btn {
+    padding:6px 16px; border-radius:8px; border:1px solid var(--border);
+    background:transparent; color:var(--text-dim); cursor:pointer;
+    font-size:11px; font-family:var(--font-body); transition:all .2s;
+    letter-spacing:.02em;
+  }
+  .clear-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+
+  /* ===== MESSAGES ===== */
+  .messages {
+    flex:1; overflow-y:auto; padding:28px 32px;
+    display:flex; flex-direction:column; gap:24px;
+  }
+  .messages:empty::after {
+    content:'输入你的 Java 面试问题，开始问答';
+    display:flex; align-items:center; justify-content:center; height:100%;
+    color:var(--text-muted); font-size:13px; letter-spacing:.03em;
+    font-family:var(--font-serif); font-style:italic;
+  }
+
+  .msg-group { display:flex; flex-direction:column; gap:4px; animation:msg-in .35s ease; }
+  @keyframes msg-in {
+    from { opacity:0; transform:translateY(10px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  .msg { display:flex; gap:14px; max-width:760px; }
+  .msg.user { flex-direction:row-reverse; align-self:flex-end; }
+  .msg.assistant { align-self:flex-start; }
+
+  .msg .avatar {
+    width:32px; height:32px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono); font-size:11px; font-weight:500;
+    margin-top:4px;
+  }
+  .msg.user .avatar {
+    background:var(--accent); color:#fff;
+  }
+  .msg.assistant .avatar {
+    background:var(--border); color:var(--text-soft);
+  }
+
+  .msg .bubble {
+    padding:14px 20px; border-radius:var(--radius);
+    font-size:14px; line-height:1.75;
+    position:relative;
+  }
+  .msg.user .bubble {
+    background:var(--accent); color:#fff;
+    border-bottom-right-radius:4px;
+  }
+  .msg.user .bubble p { margin:0; display:inline; }
+  .msg.assistant .bubble {
+    background:var(--bg-card); color:var(--text);
+    border:1px solid var(--border);
+    border-bottom-left-radius:4px;
+    box-shadow:var(--shadow);
+  }
+  .msg.assistant .bubble p { margin:.4em 0; }
+  .msg.assistant .bubble p:first-child { margin-top:0; }
+  .msg.assistant .bubble p:last-child { margin-bottom:0; }
+  .msg.assistant .bubble code {
+    background:var(--bg); padding:1px 6px; border-radius:4px;
+    font-family:var(--font-mono); font-size:13px; color:var(--accent);
+  }
+  .msg.assistant .bubble pre {
+    background:var(--bg); padding:14px; border-radius:var(--radius-sm);
+    overflow-x:auto; margin:8px 0; border:1px solid var(--border-light);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--text-soft);
+    line-height:1.6;
+  }
+  .msg.assistant .bubble ul,
+  .msg.assistant .bubble ol {
+    margin:.6em 0; padding-left:1.5em;
+  }
+  .msg.assistant .bubble li { margin:.2em 0; }
+  .msg.assistant .bubble strong { font-weight:600; color:var(--text); }
+  .msg.assistant .bubble hr {
+    border:none; border-top:1px solid var(--border); margin:1em 0;
+  }
+  .msg.assistant .bubble h1,
+  .msg.assistant .bubble h2,
+  .msg.assistant .bubble h3,
+  .msg.assistant .bubble h4 {
+    font-family:var(--font-serif); font-weight:600; margin:.8em 0 .3em;
+  }
+  .msg.assistant .bubble h1 { font-size:16px; }
+  .msg.assistant .bubble h2 { font-size:15px; }
+  .msg.assistant .bubble h3 { font-size:14px; }
+  .msg.assistant .bubble blockquote {
+    border-left:2px solid var(--accent); margin:.6em 0; padding:4px 12px;
+    color:var(--text-soft); background:var(--bg); border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  }
+
+  /* ---- context ---- */
+  .context-toggle {
+    display:inline-flex; align-items:center; gap:6px;
+    margin-top:4px; padding:5px 12px; border-radius:8px;
+    border:1px solid var(--border); background:transparent;
+    color:var(--text-dim); cursor:pointer; font-size:10px; font-family:var(--font-mono);
+    transition:all .2s; letter-spacing:.02em;
+  }
+  .context-toggle:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+  .context-toggle .arrow { transition:transform .2s; display:inline-block; font-size:8px; }
+  .context-toggle.open .arrow { transform:rotate(180deg); }
+  .context-wrap { overflow:hidden; transition:max-height .3s ease; max-height:0; }
+  .context-wrap.open { max-height:3000px; }
+  .context-inner { padding-top:8px; display:flex; flex-direction:column; gap:6px; }
+  .context-inner .chunk {
+    padding:10px 14px; border-radius:var(--radius-sm);
+    background:var(--bg); border-left:2px solid var(--accent);
+    font-size:11.5px; line-height:1.6; color:var(--text-soft);
+    font-family:var(--font-mono);
+    white-space:pre-wrap; word-break:break-all;
+  }
+
+  /* ===== INPUT ===== */
+  .input-area {
+    padding:16px 32px 20px;
+    background:linear-gradient(0deg, var(--bg) 0%, transparent 100%);
+  }
+  .input-row {
+    display:flex; gap:10px; align-items:flex-end;
+    background:var(--bg-card); border:1px solid var(--border);
+    border-radius:var(--radius); padding:4px 4px 4px 20px;
+    transition:border-color .25s, box-shadow .25s;
+    box-shadow:var(--shadow);
+  }
+  .input-row:focus-within {
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-soft), var(--shadow);
+  }
+  .input-row textarea {
+    flex:1; resize:none; padding:12px 0; border:none; background:transparent;
+    color:var(--text); font-size:14px; font-family:var(--font-body); line-height:1.6;
+    outline:none; min-height:24px; max-height:120px;
+  }
+  .input-row textarea::placeholder { color:var(--text-muted); }
+  .input-row .send-btn {
+    width:40px; height:40px; border-radius:var(--radius-sm); border:none;
+    background:var(--accent); color:#fff; cursor:pointer; font-size:17px;
+    display:flex; align-items:center; justify-content:center;
+    transition:all .2s; flex-shrink:0;
+  }
+  .input-row .send-btn:hover { opacity:.9; transform:scale(1.04); }
+  .input-row .send-btn:disabled { opacity:.3; cursor:not-allowed; transform:none; }
+  .input-row .send-btn.loading { animation:send-pulse 1s infinite; }
+  @keyframes send-pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+  /* ===== PANEL ===== */
+  .panel {
+    width:220px; flex-shrink:0;
+    padding:24px 20px; border-left:1px solid var(--border);
+    background:rgba(247,245,240,0.6);
+    display:flex; flex-direction:column; gap:20px;
+    position:relative; z-index:2;
+  }
+  .panel-group { }
+  .panel-group .label {
+    font-size:9px; font-weight:600; text-transform:uppercase;
+    letter-spacing:.08em; color:var(--text-dim); margin-bottom:10px;
+    font-family:var(--font-mono);
+  }
+  .panel-group .value-row {
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;
+  }
+  .panel-group .value-row .name { font-size:12px; color:var(--text-soft); }
+  .panel-group .value-row .val {
+    font-family:var(--font-mono); font-size:13px; font-weight:500;
+    color:var(--accent);
+  }
+
+  input[type=range] {
+    -webkit-appearance:none; width:100%; height:3px; border-radius:2px;
+    background:var(--border); outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:14px; height:14px; border-radius:50%;
+    background:var(--accent); cursor:pointer;
+    transition:transform .2s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.25); }
+  input[type=range]::-moz-range-thumb {
+    width:14px; height:14px; border-radius:50%;
+    background:var(--accent); cursor:pointer; border:none;
+  }
+
+  .panel-divider { height:1px; background:var(--border); margin:4px 0; }
+
+  .panel-card {
+    font-size:11px; color:var(--text-soft); line-height:1.7;
+    font-family:var(--font-mono);
+    padding:14px; border-radius:var(--radius-sm);
+    background:var(--bg-card); border:1px solid var(--border);
+    box-shadow:var(--shadow);
+  }
+  .panel-card strong { font-weight:600; color:var(--text); display:block; margin-bottom:2px; }
+  .panel-card code { font-size:10px; color:var(--accent); }
+
+  /* ---- typing ---- */
+  .typing .bubble::after {
+    content:''; display:inline-block; width:5px; height:5px;
+    background:var(--accent); border-radius:50%; margin-left:6px;
+    animation:blink 1s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.1} }
+
+  @media(max-width:860px) {
+    .panel { display:none; }
+    .sidebar { width:56px; }
+    .chat-header { padding:14px 16px; }
+    .messages { padding:16px; }
+    .input-area { padding:12px 16px 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="sidebar">
+    <div class="logo">R</div>
+    <button class="nav-btn active">💬</button>
+    <button class="nav-btn">⚙️</button>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="main">
+    <div class="chat-header">
+      <div class="brand">
+        <h1>RAG 问答</h1>
+        <span class="badge">Java 面试</span>
+        <span class="model-tag">Qwen2.5-1.5B + LoRA</span>
+      </div>
+      <button class="clear-btn" onclick="clearChat()">清空对话</button>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="input-area">
+      <div class="input-row">
+        <textarea id="input" placeholder="输入你的 Java 面试问题..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="send()">↵</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-group">
+      <div class="label">检索参数</div>
+      <div class="value-row"><span class="name">检索数量 K</span><span class="val" id="kVal">5</span></div>
+      <input type="range" min="1" max="10" value="5" id="kSlider" oninput="document.getElementById('kVal').textContent=this.value">
+      <div class="value-row" style="margin-top:14px"><span class="name">BM25 权重 α</span><span class="val" id="alphaVal">0.6</span></div>
+      <input type="range" min="0" max="1" step="0.05" value="0.6" id="alphaSlider" oninput="document.getElementById('alphaVal').textContent=this.value">
+    </div>
+    <div class="panel-divider"></div>
+    <div class="panel-card">
+      <strong>混合检索</strong>
+      α=0 纯语义 · α=1 纯 BM25<br>
+      索引：<code>chunk_300_overlap_50</code>
+    </div>
+    <div class="panel-card">
+      <strong>模型</strong>
+      Qwen2.5-1.5B-Instruct<br>
+      LoRA 微调 · 4bit 量化
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
+<script>
+const messages = document.getElementById('messages');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('sendBtn');
+
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+});
+
+async function send() {
+  const q = input.value.trim();
+  if (!q) return;
+
+  const k = parseInt(document.getElementById('kSlider').value);
+  const alpha = parseFloat(document.getElementById('alphaSlider').value);
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  addMessage(q, 'user');
+  const typingId = addTyping();
+  sendBtn.disabled = true;
+  sendBtn.classList.add('loading');
+
+  try {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: q, k, alpha })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    removeTyping(typingId);
+    addMessage(data.answer, 'assistant', data.context);
+  } catch (err) {
+    removeTyping(typingId);
+    addMessage('请求失败：' + err.message, 'assistant');
+  }
+
+  sendBtn.disabled = false;
+  sendBtn.classList.remove('loading');
+  input.focus();
+}
+
+function addMessage(text, role, context) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = `
+    <div class="avatar">${role === 'user' ? 'U' : 'A'}</div>
+    <div>
+      <div class="bubble">${formatText(text)}</div>
+      ${role === 'assistant' && context ? `
+        <button class="context-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+          <span class="arrow">▾</span> 查看检索内容
+        </button>
+        <div class="context-wrap"><div class="context-inner">${context.map((c,i) => `<div class="chunk">--- ${i+1} ---\n${escapeHtml(c)}</div>`).join('')}</div></div>
+      ` : ''}
+    </div>
+  `;
+  messages.appendChild(div);
+  scrollToBottom();
+}
+
+function addTyping() {
+  const id = 't-' + Date.now();
+  const div = document.createElement('div');
+  div.className = 'msg assistant typing';
+  div.id = id;
+  div.innerHTML = `<div class="avatar">A</div><div><div class="bubble">思考中</div></div>`;
+  messages.appendChild(div);
+  scrollToBottom();
+  return id;
+}
+
+function removeTyping(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function clearChat() { messages.innerHTML = ''; }
+function scrollToBottom() { messages.scrollTop = messages.scrollHeight; }
+
+function formatText(text) {
+  return marked.parse(text, { breaks: true });
+}
+function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+</script>
+</body>
+</html>

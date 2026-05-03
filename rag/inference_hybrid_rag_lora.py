@@ -1,5 +1,6 @@
 
 import os
+import sys
 import torch
 import faiss
 import numpy as np
@@ -10,6 +11,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from rank_bm25 import BM25Okapi
 from peft import PeftModel
 
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ===== 1. LLM =====
 model_name = "Qwen/Qwen2.5-1.5B-Instruct"
@@ -30,15 +32,15 @@ base_model = AutoModelForCausalLM.from_pretrained(
 
 model = PeftModel.from_pretrained(
     base_model,
-    "../sft/lora_model_qa"
+    os.path.join(_BASE_DIR, "sft/lora_model_qa")
 )
 
 
 # ===== 2. Embedding & Index =====
 embed_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
-INDEX_PATH = "../data/index/interview_chunk/chunk_300_overlap_50/knowledge.index"
-DOCS_PATH = "../data/index/interview_chunk/chunk_300_overlap_50/docs.npy"
+INDEX_PATH = os.path.join(_BASE_DIR, "data/index/interview_chunk/chunk_300_overlap_50/knowledge.index")
+DOCS_PATH = os.path.join(_BASE_DIR, "data/index/interview_chunk/chunk_300_overlap_50/docs.npy")
 
 index = faiss.read_index(INDEX_PATH)
 docs = np.load(DOCS_PATH, allow_pickle=True)
@@ -97,48 +99,40 @@ def rag_answer(question, k=5, alpha=0.6):
 
     context = "\n\n".join([docs[i] for i in retrieved_ids])
 
-    prompt = f"""
+    system_prompt = "你是一个资深Java开发工程师，回答要求逻辑清晰、结构化表达，并结合原理进行解释。"
 
-上下文：
-"
-{context}
-"
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": f"上下文：\n{context}\n\n问题：\n{question}"}
+    ]
 
-你是一个资深Java开发工程师。
-
-请基于上下文回答问题，并保证回答完整、准确。
-
-要求：
-1. 回答要有逻辑层次（可以分点，但不强制固定格式）
-2. 优先使用上下文信息
-3. 如果上下文不足，请说明，而不是猜测
-4. 避免重复或无信息增量的内容
-5. 机制类问题需要尽量覆盖：触发条件、核心规则、过程、性能影响
-
-问题：
-{question}
-
-回答：
-"""
+    prompt = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
+    )
 
     inputs = tokenizer(prompt, return_tensors="pt").to("cuda")
 
     outputs = model.generate(
         **inputs,
         max_new_tokens=500,
-        do_sample=False,          # 🔥 必开
-        temperature=0.7,
+        do_sample=True,
+        temperature=0.3,
         top_p=0.9,
-        repetition_penalty=1.1   # 🔥 防重复关键
+        repetition_penalty=1.2,
+        no_repeat_ngram_size=4,
+        eos_token_id=tokenizer.eos_token_id,
+        pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id
     )
 
-    return tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return tokenizer.decode(outputs[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
 
 
 # ===== 7. 测试 =====
 if __name__ == "__main__":
 
-    question = "说下什么是Java的SPI机制？"
+    question = "ArrayList的扩容机制了解吗？"
 
     print("Q:", question)
     print("\n===== HYBRID RAG =====")

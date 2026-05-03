@@ -12,8 +12,8 @@ model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniL
 
 # ===== 配置 =====
 CONFIGS = {
-    "chunk_300_overlap_50": "../data/index/chunk_300_overlap_50",
-    "semantic": "../data/index/semantic"
+    "chunk_300_overlap_50": "../data/index/interview_chunk/chunk_300_overlap_50",
+    "semantic": "../data/index/interview_semantic/semantic"
 }
 
 

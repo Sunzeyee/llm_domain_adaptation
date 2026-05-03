@@ -31,8 +31,8 @@ model = AutoModelForCausalLM.from_pretrained(
 # ===== 2. Embedding & Index =====
 embed_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
-INDEX_PATH = "../data/index/chunk_300_overlap_50/knowledge.index"
-DOCS_PATH = "../data/index/chunk_300_overlap_50/docs.npy"
+INDEX_PATH = "../data/index/interview_chunk/chunk_300_overlap_50/knowledge.index"
+DOCS_PATH = "../data/index/interview_chunk/chunk_300_overlap_50/docs.npy"
 
 index = faiss.read_index(INDEX_PATH)
 docs = np.load(DOCS_PATH, allow_pickle=True)

@@ -14,8 +14,8 @@ embed_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual
 
 
 # ===== 2. 路径 =====
-INDEX_PATH = "../data/index/chunk_300_overlap_50/knowledge.index"
-DOCS_PATH = "../data/index/chunk_300_overlap_50/docs.npy"
+INDEX_PATH = "../data/index/interview_chunk/chunk_300_overlap_50/knowledge.index"
+DOCS_PATH = "../data/index/interview_chunk/chunk_300_overlap_50/docs.npy"
 
 
 # ===== 3. 加载 =====

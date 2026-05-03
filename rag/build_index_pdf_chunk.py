@@ -12,7 +12,7 @@ PDF_PATH = "../data/raw/mianzhanixi.pdf"
 CHUNK_SIZE = 100
 OVERLAP = 0
 
-SAVE_DIR = f"../data/index/chunk_{CHUNK_SIZE}_overlap_{OVERLAP}"
+SAVE_DIR = f"../data/index/interview_chunk/chunk_{CHUNK_SIZE}_overlap_{OVERLAP}"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 

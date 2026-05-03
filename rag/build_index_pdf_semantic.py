@@ -13,7 +13,7 @@ PDF_PATH = "../data/raw/mianzhanixi.pdf"
 THRESHOLDS = [0.6, 0.7, 0.75, 0.8]
 OVERLAPS = [0, 50]
 
-BASE_DIR = "../data/index"
+BASE_DIR = "../data/index/interview_semantic"
 
 model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
